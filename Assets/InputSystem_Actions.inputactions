@@ -3,7 +3,7 @@
     "name": "InputSystem_Actions",
     "maps": [
         {
-            "name": "Player",
+            "name": "StockPlayer",
             "id": "df70fa95-8a34-4494-b137-73ab6b9c7d37",
             "actions": [
                 {
@@ -91,6 +91,15 @@
                     "name": "UpDown",
                     "type": "Value",
                     "id": "71f87599-ae6e-4dd5-be17-d862387af15c",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Ailerons",
+                    "type": "Value",
+                    "id": "06b24707-aed7-48a3-86e8-e248f8b347b7",
                     "expectedControlType": "Axis",
                     "processors": "",
                     "interactions": "",
@@ -513,6 +522,39 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "UpDown",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "2daff540-ff96-4240-ad29-00d8b7badd64",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Ailerons",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "e4ec7413-d543-407b-a491-c24c2b42d023",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Ailerons",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "ffc042f5-57da-4ac0-9dec-8e299912aedf",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Ailerons",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }
@@ -1031,6 +1073,56 @@
                     "action": "TrackedDeviceOrientation",
                     "isComposite": false,
                     "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "PaperPlane",
+            "id": "20dae7f4-e182-41be-8b61-90bf18934b0e",
+            "actions": [
+                {
+                    "name": "Ailerons",
+                    "type": "Value",
+                    "id": "dc57afc0-4cd6-4a4a-9b36-a778957e91a4",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "1D Axis",
+                    "id": "1cafd7da-dc20-4b51-9e47-d4132ac3fc65",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Ailerons",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Positive",
+                    "id": "06fcbf1f-d335-4af1-8977-35f5b8241b25",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Ailerons",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Negative",
+                    "id": "38bd37d8-5289-475c-be16-61092e0321eb",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Ailerons",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         }
