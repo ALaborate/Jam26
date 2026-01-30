@@ -1,0 +1,3 @@
+[submodule "Assets/Modules/AlaborateUnityUtils"]
+	path = Assets/Modules/AlaborateUnityUtils
+	url = git@github.com:ALaborate/AlaborateUnityUtils.git
