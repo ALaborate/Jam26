@@ -509,7 +509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 155ebed8bdf02bb4f8e5cfde83d0299e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stabilizerStrength: 0.42
+  stabilizerStrength: 1.34
   aileronTorqueWrtSpeed:
     serializedVersion: 2
     m_Curve:
@@ -525,11 +525,11 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 48
       value: 0.5
-      inSlope: 0
-      outSlope: 0
+      inSlope: 0.025461024
+      outSlope: 0.025461024
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0
+      inWeight: 0.03338178
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
@@ -539,21 +539,45 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
-      inSlope: -0.0023804896
-      outSlope: -0.0023804896
+      value: -0.0018920898
+      inSlope: 0.0033795522
+      outSlope: 0.0033795522
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.1162465
+      outWeight: 0.7953555
     - serializedVersion: 3
-      time: 48
-      value: 1
-      inSlope: 0
-      outSlope: 0
+      time: 24
+      value: 1.4904705
+      inSlope: 0.14308162
+      outSlope: 0.14308162
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.036284525
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  linearDumpWrtAngularVelocity:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.1
+      inSlope: 0.2955837
+      outSlope: 0.2955837
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
+      outWeight: 0.07837445
+    - serializedVersion: 3
+      time: 1
+      value: 4
+      inSlope: 13.2697315
+      outSlope: 13.2697315
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.024673462
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
@@ -562,6 +586,8 @@ MonoBehaviour:
     velocityNormalized: {x: NaN, y: NaN, z: NaN}
     velocityMagnitude: 0
     fwdSpeed: 0
+    verticalSpeed: 0
+    ldRatio: NaN
 --- !u!54 &1230790611
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -571,7 +597,7 @@ Rigidbody:
   m_GameObject: {fileID: 1230790608}
   serializedVersion: 4
   m_Mass: 0.01
-  m_Drag: 0.24
+  m_Drag: 0.28
   m_AngularDrag: 45
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
