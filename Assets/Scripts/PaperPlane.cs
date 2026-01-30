@@ -60,10 +60,11 @@ public class PaperPlane : MonoBehaviour
         Quaternion deltaRotation = targetRotation * Quaternion.Inverse(transform.rotation);
         deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
         if (angle > 180f) angle -= 360f;
+        angle = Mathf.Min(angle, angle * angle);
         Vector3 torque = axis * (angle * Mathf.Deg2Rad) * stabilizerStrength;
         rb.AddTorque(torque, ForceMode.Force);
 
-        rb.linearDamping = linearDumpWrtAngularVelocity.Evaluate(rb.angularVelocity.magnitude);
+        rb.linearDamping = linearDumpWrtAngularVelocity.Evaluate(Mathf.Abs(rb.angularVelocity.x));
     }
     private void SimulateLift()
     {
