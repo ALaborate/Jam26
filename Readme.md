@@ -1,0 +1,7 @@
+# A paperplane flyer for GGJ 26
+
+#### Used resources
+1. https://opengameart.org/content/paper-airplane?destination=node/3607#
+1. https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-equation/
+2. https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-to-drag-ratio/
+3. 
