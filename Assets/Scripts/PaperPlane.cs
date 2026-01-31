@@ -23,6 +23,7 @@ public class PaperPlane : MonoBehaviour
     //InputAction iLookButton;
 
     private Rigidbody rb;
+    private bool active = true;
     [SerializeField] private StateVars state = new();
 
     private void Awake()
@@ -46,7 +47,7 @@ public class PaperPlane : MonoBehaviour
         var horizontalVelocity = Vector3.Project(rb.linearVelocity, Vector3.Cross(Vector3.up, transform.right));
         state.ldRatio = horizontalVelocity.magnitude / state.verticalSpeed;
 
-        if (state.velocityMagnitude > 0.1f)
+        if (active && state.velocityMagnitude > 0.1f)
         {
             SimulateStabilizer();
             SimulateLift();
@@ -76,6 +77,15 @@ public class PaperPlane : MonoBehaviour
         var control = iAilerons.ReadValue<float>();
         var torque = new Vector3(0, 0, control * aileronTorqueWrtSpeed.Evaluate(state.fwdSpeed));
         rb.AddRelativeTorque(torque, ForceMode.Force);
+    }
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(collision.collider.gameObject.layer == LayerMask.NameToLayer("TrashReceiver"))
+        {
+            active = false;
+        }
     }
 
     [System.Serializable]
