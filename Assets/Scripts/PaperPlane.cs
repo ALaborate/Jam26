@@ -6,6 +6,10 @@ public class PaperPlane : MonoBehaviour
 {
     const float MAX_SPEED = 24;
 
+    [SerializeField] float dropTime = 1f;
+
+    [Header("Flight")]
+    [SerializeField] float aileronInputFilter = 0.95f;
     [SerializeField] float stabilizerStrength = 1;
     [SerializeField] AnimationCurve aileronTorqueWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
     [SerializeField] AnimationCurve liftWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
@@ -14,6 +18,7 @@ public class PaperPlane : MonoBehaviour
     InputActionMap actionMap;
     //InputAction iMove;
     InputAction iAilerons;
+    InputAction iRestart;
 
 
     //InputAction iUpDown;
@@ -22,9 +27,34 @@ public class PaperPlane : MonoBehaviour
     //InputAction iLook;
     //InputAction iLookButton;
 
-    private Rigidbody rb;
-    private bool active = true;
+    public void DropIntoTrash(Trashcan can)
+    {
+        if(dropRoutine != null)
+            StopCoroutine(dropRoutine);
+        dropRoutine = StartCoroutine(DropRoutine(can));
+    }
+
+
     [SerializeField] private StateVars state = new();
+    private Rigidbody rb;
+    private Vector3 initialPosition;
+    private bool Simulated
+    {
+        get => !rb.isKinematic;
+        set
+        {
+            rb.isKinematic = !value;
+            if (!rb.isKinematic)
+            {
+                if(dropRoutine != null)
+                {
+                    StopCoroutine(dropRoutine);
+                    dropRoutine = null;
+                }
+            }
+        }
+    }
+
 
     private void Awake()
     {
@@ -33,6 +63,19 @@ public class PaperPlane : MonoBehaviour
 
         rb = GetComponent<Rigidbody>();
         rb.maxLinearVelocity = MAX_SPEED;
+
+        initialPosition = transform.position;
+    }
+
+    private void Update()
+    {
+        if(iRestart.ReadValue<float>() != 0f)
+        {
+            rb.Move(initialPosition, transform.rotation);
+            Simulated = true;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     private void FixedUpdate()
@@ -47,7 +90,7 @@ public class PaperPlane : MonoBehaviour
         var horizontalVelocity = Vector3.Project(rb.linearVelocity, Vector3.Cross(Vector3.up, transform.right));
         state.ldRatio = horizontalVelocity.magnitude / state.verticalSpeed;
 
-        if (active && state.velocityMagnitude > 0.1f)
+        if (Simulated && state.velocityMagnitude > 0.1f)
         {
             SimulateStabilizer();
             SimulateLift();
@@ -72,21 +115,39 @@ public class PaperPlane : MonoBehaviour
         var force = liftWrtSpeed.Evaluate(state.fwdSpeed);
         rb.AddForce(transform.up * force, ForceMode.Force);
     }
+    float aileronInput = 0f;
     private void SimulateAilerons()
     {
         var control = iAilerons.ReadValue<float>();
-        var torque = new Vector3(0, 0, control * aileronTorqueWrtSpeed.Evaluate(state.fwdSpeed));
+        aileronInput = Mathf.Lerp(control, aileronInput, aileronInputFilter);
+        var torque = new Vector3(0, 0, aileronInput * aileronTorqueWrtSpeed.Evaluate(state.fwdSpeed));
         rb.AddRelativeTorque(torque, ForceMode.Force);
     }
 
-
-    private void OnCollisionEnter(Collision collision)
+    Coroutine dropRoutine = null;
+    System.Collections.IEnumerator DropRoutine(Trashcan trashcan)
     {
-        if(collision.collider.gameObject.layer == LayerMask.NameToLayer("TrashReceiver"))
+        Simulated = false;
+        var tStart = Time.time;
+        var trashTransform = trashcan.transform;
+        var pStart = trashTransform.InverseTransformPoint(transform.position);
+        while (true)
         {
-            active = false;
+            var t = (Time.time - tStart) / dropTime;
+
+            var pCurr = Vector3.Slerp(pStart, Vector3.zero, t);
+            transform.position = trashTransform.TransformPoint(pCurr);
+
+            if (t > 1)
+                break;
+
+            yield return null;
         }
+
+        dropRoutine = null;
     }
+
+
 
     [System.Serializable]
     class StateVars

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Video;
 
 public class Trashcan : MonoBehaviour
 {
@@ -7,16 +6,29 @@ public class Trashcan : MonoBehaviour
     [SerializeField] Collider zoneTrigger;
 
     [SerializeField] float lidRotationTime = 1f;
-    [SerializeField] Vector3 lidOpenRotation = new Vector3(68, 0);
+    [SerializeField] Vector3 lidOpenEuler = new Vector3(-68, 0);
 
     Transform lid;
-    Vector3 lidClosedRotation;
+    Quaternion lidClosedRotation;
 
 
     private void Awake()
     {
         lid = transform.GetChild(0);
-        lidClosedRotation = lid.localEulerAngles;
+        lidClosedRotation = lid.localRotation;
+        receiveCollider.isTrigger = true;
+        if(!receiveCollider.gameObject.TryGetComponent(out Trigger trigger))
+            trigger = receiveCollider.gameObject.AddComponent<Trigger>();
+        trigger.OnEnter += ReceiverEnter;
+    }
+
+    private void ReceiverEnter(Collider other)
+    {
+        var player = other.GetComponentInParent<PaperPlane>();
+        if(player)
+        {
+            player.DropIntoTrash(this);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -28,7 +40,7 @@ public class Trashcan : MonoBehaviour
             receiveCollider.enabled = true;
             if (lidRoutine != null)
                 StopCoroutine(lidRoutine);
-            lidRoutine = StartCoroutine(ChangeLidState(lidOpenRotation));
+            lidRoutine = StartCoroutine(ChangeLidState(Quaternion.Euler(lidOpenEuler)));
         }
     }
 
@@ -44,13 +56,13 @@ public class Trashcan : MonoBehaviour
     }
 
     Coroutine lidRoutine = null;
-    System.Collections.IEnumerator ChangeLidState(Vector3 targetLidRotation)
+    System.Collections.IEnumerator ChangeLidState(Quaternion targetLidRotation)
     {
         var tStart = Time.time;
-        var rStart = lid.localEulerAngles;
+        var rStart = lid.localRotation;
         do
         {
-            lid.localEulerAngles = Vector3.Lerp(rStart, targetLidRotation, (Time.time - tStart) / lidRotationTime);
+            lid.localRotation = Quaternion.Lerp(rStart, targetLidRotation, (Time.time - tStart) / lidRotationTime);
             yield return null;
         } while (Time.time < tStart + lidRotationTime);
 

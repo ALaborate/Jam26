@@ -563,6 +563,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 155ebed8bdf02bb4f8e5cfde83d0299e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dropTime: 1
+  aileronInputFilter: 0.95
   stabilizerStrength: 1.36
   aileronTorqueWrtSpeed:
     serializedVersion: 2
@@ -1101,7 +1103,7 @@ MonoBehaviour:
   receiveCollider: {fileID: 957195352}
   zoneTrigger: {fileID: 1676235825}
   lidRotationTime: 1
-  lidOpenRotation: {x: -68, y: 0, z: 0}
+  lidOpenEuler: {x: -68, y: 0, z: 0}
 --- !u!1 &2068800109
 GameObject:
   m_ObjectHideFlags: 0
