@@ -26,6 +26,8 @@
 # Visual Studio cache directory
 .vs/
 
+*.blend1
+
 # Gradle cache directory
 .gradle/
 .utmp/
