@@ -1,6 +1,8 @@
 using ALaborateUnityUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
+using UnityEngine.Video;
 
 public class PaperPlane : MonoBehaviour
 {
@@ -37,7 +39,9 @@ public class PaperPlane : MonoBehaviour
 
     [SerializeField] private StateVars state = new();
     private Rigidbody rb;
+    private GameObject[] spawners = null;
     private Vector3 initialPosition;
+
     private bool Simulated
     {
         get => !rb.isKinematic;
@@ -64,19 +68,37 @@ public class PaperPlane : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         rb.maxLinearVelocity = MAX_SPEED;
 
+        spawners = GameObject.FindGameObjectsWithTag("Respawn");
         initialPosition = transform.position;
     }
+
+
+    float timeRestrartPressed = float.NaN;
 
     private void Update()
     {
         if(iRestart.ReadValue<float>() != 0f)
         {
-            rb.Move(initialPosition, transform.rotation);
+            if (!float.IsNormal(timeRestrartPressed))
+                timeRestrartPressed = Time.time;
+        }
+        else if(float.IsNormal(timeRestrartPressed))
+        {
+            var pos = initialPosition;
+            if (spawners.Length > 0)
+                pos = spawners[Random.Range(0, spawners.Length)].transform.position;
+            var pressTime = Time.time - timeRestrartPressed;
+
+            pos = pos + Vector3.up * pressTime * pressTime; //additional altitude
+
+            rb.Move(pos, transform.rotation);
             Simulated = true;
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
 
             GameManager.instance.Restart();
+
+            timeRestrartPressed = float.NaN;
         }
     }
 
