@@ -39,11 +39,11 @@ public class GameManager : MonoBehaviour
     {
         instance = this;
         GameObject.FindGameObjectsWithTag("TrashSpawn", trashSpawners);
-        var lTerrain = LayerMask.GetMask("Terrain");
+        //var lTerrain = LayerMask.GetMask("Terrain");
         for (int i = 0; i < trashSpawners.Count; i++)
         {
             var tr = trashSpawners[i].transform;
-            if (Physics.Raycast(tr.position + Vector3.up * 5, Vector3.down, out var rhi, 100, lTerrain))
+            if (Physics.Raycast(tr.position + Vector3.up * 5, Vector3.down, out var rhi, 100, Physics.DefaultRaycastLayers))
                 tr.position = rhi.point;
         }
     }
