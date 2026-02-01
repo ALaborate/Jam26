@@ -1,14 +1,13 @@
 using ALaborateUnityUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
-using UnityEngine.Video;
 
 public class PaperPlane : MonoBehaviour
 {
     const float MAX_SPEED = 24;
 
     [SerializeField] float dropTime = 1f;
+    [SerializeField] PlayerView playerView;
 
     [Header("Flight")]
     [SerializeField] float aileronInputFilter = 0.95f;
@@ -31,7 +30,7 @@ public class PaperPlane : MonoBehaviour
 
     public void DropIntoTrash(Trashcan can)
     {
-        if(dropRoutine != null)
+        if (dropRoutine != null)
             StopCoroutine(dropRoutine);
         dropRoutine = StartCoroutine(DropRoutine(can));
     }
@@ -50,7 +49,7 @@ public class PaperPlane : MonoBehaviour
             rb.isKinematic = !value;
             if (!rb.isKinematic)
             {
-                if(dropRoutine != null)
+                if (dropRoutine != null)
                 {
                     StopCoroutine(dropRoutine);
                     dropRoutine = null;
@@ -72,34 +71,38 @@ public class PaperPlane : MonoBehaviour
         initialPosition = transform.position;
     }
 
-
-    float timeRestrartPressed = float.NaN;
-
+    bool prevRestart = false;
     private void Update()
     {
-        if(iRestart.ReadValue<float>() != 0f)
+        var currRestart = iRestart.ReadValue<float>() != 0f;
+        if (currRestart && !prevRestart)
         {
-            if (!float.IsNormal(timeRestrartPressed))
-                timeRestrartPressed = Time.time;
+            playerView.pause = false;
+            var currView = playerView.Peek;
+            if (!currView.HasValue || currView.Value != PlayerView.Target.Wind)
+            {
+                var pos = initialPosition;
+                if (spawners.Length > 0)
+                    pos = spawners[Random.Range(0, spawners.Length)].transform.position;
+
+                rb.Move(pos, transform.rotation);
+                Simulated = true;
+                rb.linearVelocity = transform.forward;
+                rb.angularVelocity = Vector3.zero;
+                playerView.InterruptQueue(PlayerView.Target.Wind);
+                GameManager.instance.Restart();
+            }
+            else
+            {
+                rb.Move(transform.position + Vector3.up * 5, transform.rotation);
+                rb.linearVelocity = transform.forward;
+                rb.angularVelocity = Vector3.zero;
+            }
         }
-        else if(float.IsNormal(timeRestrartPressed))
-        {
-            var pos = initialPosition;
-            if (spawners.Length > 0)
-                pos = spawners[Random.Range(0, spawners.Length)].transform.position;
-            var pressTime = Time.time - timeRestrartPressed;
+        prevRestart = currRestart;
 
-            pos = pos + Vector3.up * pressTime * pressTime; //additional altitude
-
-            rb.Move(pos, transform.rotation);
-            Simulated = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-
-            GameManager.instance.Restart();
-
-            timeRestrartPressed = float.NaN;
-        }
+        if (state.velocityMagnitude < 0.1f && (!playerView.Peek.HasValue || playerView.Peek.Value != PlayerView.Target.Wind))
+            RemindPlayerOfRestart();
     }
 
     private void FixedUpdate()
@@ -168,10 +171,24 @@ public class PaperPlane : MonoBehaviour
             yield return null;
         }
 
+        playerView.Queue(PlayerView.Target.Check);
+        playerView.pause = true;
         dropRoutine = null;
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        RemindPlayerOfRestart();
+    }
 
+    private void RemindPlayerOfRestart()
+    {
+        if (Simulated)
+        {
+            if (!playerView.IsShowing)
+                playerView.Queue(PlayerView.Target.Cross);
+        }
+    }
 
     [System.Serializable]
     class StateVars
