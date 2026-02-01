@@ -75,6 +75,8 @@ public class PaperPlane : MonoBehaviour
             Simulated = true;
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+
+            GameManager.instance.Restart();
         }
     }
 
