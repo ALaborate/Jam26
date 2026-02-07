@@ -85,8 +85,8 @@ public class PaperPlane : MonoBehaviour
                 if (spawners.Length > 0)
                     pos = spawners[Random.Range(0, spawners.Length)].transform.position;
 
-                rb.Move(pos, transform.rotation);
                 Simulated = true;
+                rb.Move(pos, transform.rotation);
                 rb.linearVelocity = transform.forward;
                 rb.angularVelocity = Vector3.zero;
                 if (playerView.Peek.HasValue && playerView.Peek.Value == PlayerView.Target.Check)
