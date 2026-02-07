@@ -89,7 +89,14 @@ public class PaperPlane : MonoBehaviour
                 Simulated = true;
                 rb.linearVelocity = transform.forward;
                 rb.angularVelocity = Vector3.zero;
-                playerView.InterruptQueue(PlayerView.Target.Wind);
+                if (playerView.Peek.HasValue && playerView.Peek.Value == PlayerView.Target.Check)
+                {
+                    playerView.InterruptQueue(PlayerView.Target.Plot);
+                    playerView.Queue(PlayerView.Target.Wind);
+                }
+                else
+                    playerView.InterruptQueue(PlayerView.Target.Wind);
+
                 GameManager.instance.Restart();
             }
             else
