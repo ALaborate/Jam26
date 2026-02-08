@@ -10,7 +10,7 @@ public class PaperPlane : MonoBehaviour
     [SerializeField] PlayerView playerView;
 
     [Header("Flight")]
-    [SerializeField] float aileronInputFilter = 0.95f;
+    [SerializeField] float aileronInputFilter = 0.98f;
     [SerializeField] float stabilizerStrength = 1;
     [SerializeField] AnimationCurve aileronTorqueWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
     [SerializeField] AnimationCurve liftWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
