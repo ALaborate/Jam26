@@ -1,4 +1,4 @@
-# A paperplane flyer for GGJ 26
+# A ~~paper~~maskplane flyer for GGJ 26
 
 #### Used resources
 Final:
@@ -9,7 +9,7 @@ Final:
 1. https://opengameart.org/content/free-urban-textures-ground-grass-road-cobbles-snow
 2. https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-to-drag-ratio/
 1. https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-equation/
-3. 
+3. https://ailascott.itch.io/free-music-pack-lo-fi-indie-metal-orchestral (Restless lullaby)
 
 During development:
 1. https://opengameart.org/content/paper-airplane?destination=node/3607#
