@@ -1,5 +1,7 @@
 # A ~~paper~~maskplane flyer for GGJ 26
 
+Play it [here](https://alaborate.itch.io/glider-mask)! Thanks to the itch.io for hosting the game.
+
 #### Used resources
 Final:
 1. https://opengameart.org/content/building-pack
