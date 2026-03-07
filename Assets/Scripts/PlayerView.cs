@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 public class PlayerView : MonoBehaviour
 {
+    static readonly Color TRANSPARENT = new Color(0, 0, 0, 0);
+
     [SerializeField] float showTime = 2f;
     [SerializeField] float fadeTime = 1f;
     [SerializeField] Image background;
@@ -13,17 +15,14 @@ public class PlayerView : MonoBehaviour
     [SerializeField] Image Cross;
     [SerializeField] Image Wind;
     [SerializeField] Image Plot;
-
-    public enum Target
-    {
-        Check,
-        Cross,
-        Wind,
-        Plot,
-    }
+    [Space]
+    [SerializeField] Text pressR;
+    [SerializeField] float pressRFadeInTime = 8;
 
 
-    static readonly Color TRANSPARENT = new Color(0, 0, 0, 0);
+
+    public UnityEvent<bool> onPauseChange;
+    public UnityEvent onFinishingQueue;
     public bool IsShowing => timeToShow > 0f || queue.Count > 1;
     public void Queue(Target target) => queue.Enqueue(target);
     public void InterruptQueue(Target target)
@@ -50,12 +49,21 @@ public class PlayerView : MonoBehaviour
         images = new Image[] { Check, Cross, Wind, Plot };
         background.enabled = true;
         Queue(Target.Plot);
-        Queue(Target.Plot);
+        pause = true;
         Queue(Target.Wind);
+        onPauseChange.AddListener(RemovePressRHint);
+        pressRFadeInRoutine = StartCoroutine(PressRFadeInRoutine());
     }
 
+    bool prevPause = false;
     private void Update()
     {
+        if (pause != prevPause)
+        {
+            onPauseChange?.Invoke(pause);
+            prevPause = pause;
+        }
+
         if (queue.Count > 0 && timeToShow == float.NegativeInfinity)
         {
             timeToShow = fadeTime + showTime;
@@ -94,10 +102,45 @@ public class PlayerView : MonoBehaviour
         else if (queue.Count < 2)
             currBgColor.a -= Time.deltaTime * fadeTime;
         currBgColor.a = Mathf.Clamp01(currBgColor.a);
+        if (currBgColor.a == 0f && background.color.a > 0f)
+            onFinishingQueue?.Invoke();
         background.color = currBgColor;
 
         if(!pause || timeToShow > showTime)
             timeToShow -= Time.deltaTime;
 
+    }
+
+    private void RemovePressRHint(bool _)
+    {
+        if (!pause)
+        {
+            pressR.gameObject.SetActive(false);
+            onPauseChange.RemoveListener(RemovePressRHint);
+            if (pressRFadeInRoutine != null)
+                StopCoroutine(pressRFadeInRoutine);
+        }
+    }
+
+    Coroutine pressRFadeInRoutine = null;
+    private System.Collections.IEnumerator PressRFadeInRoutine()
+    {
+        var color = pressR.color;
+        while (true) {
+            color.a = Mathf.Lerp(0, 1, Time.time / pressRFadeInTime);
+            pressR.color = color;
+            yield return null;
+            if (color.a == 1)
+                break;
+        }
+        pressRFadeInRoutine = null;
+    }
+
+    public enum Target
+    {
+        Check,
+        Cross,
+        Wind,
+        Plot,
     }
 }

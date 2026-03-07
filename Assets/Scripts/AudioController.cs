@@ -5,21 +5,16 @@ public class AudioController : MonoBehaviour
     [SerializeField] PlayerView playerView;
 
     AudioSource audioSource;
-    bool inited;
 
     private void Awake()
     {
         audioSource = GetComponent<AudioSource>();
-        inited = false;
+        playerView.onFinishingQueue.AddListener(StartPlaying);
     }
 
-    private void Update()
+    void StartPlaying()
     {
-        if (!inited && !playerView.Peek.HasValue)
-        {
-            audioSource.Play();
-            inited = true;
-            enabled = false;
-        }
+        audioSource.Play();
+        playerView.onFinishingQueue.RemoveListener(StartPlaying);
     }
 }

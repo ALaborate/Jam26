@@ -69,9 +69,12 @@ public class PaperPlane : MonoBehaviour
 
         spawners = GameObject.FindGameObjectsWithTag("Respawn");
         initialPosition = transform.position;
+
+        rb.isKinematic = true;
     }
 
     bool prevRestart = false;
+    bool alreadyOncePressedR = false;
     private void Update()
     {
         var currRestart = iRestart.ReadValue<float>() != 0f;
@@ -79,7 +82,9 @@ public class PaperPlane : MonoBehaviour
         {
             playerView.pause = false;
             var currView = playerView.Peek;
-            if (!currView.HasValue || currView.Value != PlayerView.Target.Wind)
+
+            bool pressingToGetHigherAfterRestart = currView.HasValue && currView.Value == PlayerView.Target.Wind;
+            if (alreadyOncePressedR && !pressingToGetHigherAfterRestart)
             {
                 var pos = initialPosition;
                 if (spawners.Length > 0)
@@ -99,7 +104,12 @@ public class PaperPlane : MonoBehaviour
 
                 GameManager.instance.Restart();
             }
-            else
+            else if (!alreadyOncePressedR)
+            {
+                alreadyOncePressedR = true;
+                rb.isKinematic = false;
+            }
+            else if(pressingToGetHigherAfterRestart)
             {
                 rb.Move(transform.position + Vector3.up * 5, transform.rotation);
                 rb.linearVelocity = transform.forward;
