@@ -71,6 +71,8 @@ public class PaperPlane : MonoBehaviour
         initialPosition = transform.position;
 
         rb.isKinematic = true;
+
+        playerView.onFinishingQueue.AddListener(() => alreadyOncePressedR = true); //here to ignore all subsequent presses before gameplay actually starts
     }
 
     bool prevRestart = false;
@@ -106,7 +108,6 @@ public class PaperPlane : MonoBehaviour
             }
             else if (!alreadyOncePressedR)
             {
-                alreadyOncePressedR = true;
                 rb.isKinematic = false;
             }
             else if(pressingToGetHigherAfterRestart)
