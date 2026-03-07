@@ -16,7 +16,7 @@ public class PaperPlane : MonoBehaviour
     [SerializeField] AnimationCurve liftWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
     [SerializeField] AnimationCurve linearDumpWrtAngularVelocity = AnimationCurve.EaseInOut(0, .2f, .5f, .54f);
 
-    InputActionMap actionMap;
+    static InputActionMap _actionMap;
     //InputAction iMove;
     InputAction iAilerons;
     InputAction iRestart;
@@ -27,7 +27,8 @@ public class PaperPlane : MonoBehaviour
     //InputAction iSlower;
     //InputAction iLook;
     //InputAction iLookButton;
-
+    
+    public static InputActionMap ActionMap => _actionMap ??= InputRef.DefaultActionAsset.FindActionMapLevenstein(nameof(PaperPlane), out _);
     public void DropIntoTrash(Trashcan can)
     {
         if (dropRoutine != null)
@@ -61,8 +62,7 @@ public class PaperPlane : MonoBehaviour
 
     private void Awake()
     {
-        actionMap = InputRef.DefaultActionAsset.FindActionMapLevenstein(GetType().Name, out _);
-        InputUtils.FillInputActions(actionMap, this);
+        InputUtils.FillInputActions(ActionMap, this);
 
         rb = GetComponent<Rigidbody>();
         rb.maxLinearVelocity = MAX_SPEED;
