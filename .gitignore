@@ -78,3 +78,6 @@ crashlytics-build.properties
 *.bkp
 *.drawio.dtmp
 *.blend*
+
+Assets/Scenes/SampleScene/*.png
+Assets/Scenes/SampleScene/*.exr
