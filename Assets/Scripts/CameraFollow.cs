@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 public class CameraFollow : MonoBehaviour
 {
     const float MAX_SMOOTH_TIME = 0.8f;
-    const float MIN_SMOOTH_TIME = 0.02f;
+    const float MIN_SMOOTH_TIME = 0.01f;
 
     [SerializeField] Transform targetPos;
     [SerializeField] [Range(0, MAX_SMOOTH_TIME)] float smoothTime;

@@ -1,20 +1,29 @@
 using ALaborateUnityUtils;
+using System.Text;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 
 public class PaperPlane : MonoBehaviour
 {
     const float MAX_SPEED = 24;
+    const float G = 9.81f;
 
     [SerializeField] float dropTime = 1f;
     [SerializeField] PlayerView playerView;
 
     [Header("Flight")]
-    [SerializeField] float aileronInputFilter = 0.98f;
-    [SerializeField] float stabilizerStrength = 1;
+    [SerializeField] float aileronsSmoothtime = 2f;
+    [SerializeField] float stabilizerMaxAngularSpeed = 90f;
+    [SerializeField] float stabilizerSmoothTime = 1f;
+    [SerializeField] float drag = 0.5f;
+    [SerializeField] float aileronsAngulardDamping = 0.3f;
+    [SerializeField] float stabilizerAngularDamping = 1f;
     [SerializeField] AnimationCurve aileronTorqueWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
     [SerializeField] AnimationCurve liftWrtSpeed = AnimationCurve.EaseInOut(0, 0, MAX_SPEED, 4);
-    [SerializeField] AnimationCurve linearDumpWrtAngularVelocity = AnimationCurve.EaseInOut(0, .2f, .5f, .54f);
+
+    public UnityEvent<RaycastHit> OnCollision;
 
     static InputActionMap _actionMap;
     //InputAction iMove;
@@ -38,17 +47,20 @@ public class PaperPlane : MonoBehaviour
 
 
     [SerializeField] private StateVars state = new();
+
+
     private Rigidbody rb;
     private GameObject[] spawners = null;
     private Vector3 initialPosition;
 
+    private bool _simulated = false;
     private bool Simulated
     {
-        get => !rb.isKinematic;
+        get => _simulated;
         set
         {
-            rb.isKinematic = !value;
-            if (!rb.isKinematic)
+            _simulated = value;
+            if (Simulated)
             {
                 if (dropRoutine != null)
                 {
@@ -69,8 +81,8 @@ public class PaperPlane : MonoBehaviour
 
         spawners = GameObject.FindGameObjectsWithTag("Respawn");
         initialPosition = transform.position;
-
         rb.isKinematic = true;
+        state.velocityNormalized = transform.forward;
 
         playerView.onFinishingQueue.AddListener(() => alreadyOncePressedR = true); //here to ignore all subsequent presses before gameplay actually starts
     }
@@ -79,6 +91,8 @@ public class PaperPlane : MonoBehaviour
     bool alreadyOncePressedR = false;
     private void Update()
     {
+        Simulate(Time.deltaTime);
+
         var currRestart = iRestart.ReadValue<float>() != 0f;
         if (currRestart && !prevRestart)
         {
@@ -93,9 +107,8 @@ public class PaperPlane : MonoBehaviour
                     pos = spawners[Random.Range(0, spawners.Length)].transform.position;
 
                 Simulated = true;
-                rb.Move(pos, transform.rotation);
-                rb.linearVelocity = transform.forward;
-                rb.angularVelocity = Vector3.zero;
+                Teleport(pos, transform.rotation);
+
                 if (playerView.Peek.HasValue && playerView.Peek.Value == PlayerView.Target.Check)
                 {
                     playerView.InterruptQueue(PlayerView.Target.Plot);
@@ -108,13 +121,11 @@ public class PaperPlane : MonoBehaviour
             }
             else if (!alreadyOncePressedR)
             {
-                rb.isKinematic = false;
+                Simulated = true;
             }
             else if(pressingToGetHigherAfterRestart)
             {
-                rb.Move(transform.position + Vector3.up * 5, transform.rotation);
-                rb.linearVelocity = transform.forward;
-                rb.angularVelocity = Vector3.zero;
+                Teleport(transform.position + Vector3.up * 5, transform.rotation);
             }
         }
         prevRestart = currRestart;
@@ -123,50 +134,83 @@ public class PaperPlane : MonoBehaviour
             RemindPlayerOfRestart();
     }
 
-    private void FixedUpdate()
+    private void Teleport(Vector3 position, Quaternion rotation)
     {
-        state.velocityMagnitude = rb.linearVelocity.magnitude;
-        state.velocityNormalized = rb.linearVelocity / state.velocityMagnitude;
-        var forwardVelocity = Vector3.Project(rb.linearVelocity, transform.forward);
-        state.fwdSpeed = forwardVelocity.magnitude;
-
-        var verticalVelocity = Vector3.Project(rb.linearVelocity, Vector3.up);
-        state.verticalSpeed = verticalVelocity.magnitude;
-        var horizontalVelocity = Vector3.Project(rb.linearVelocity, Vector3.Cross(Vector3.up, transform.right));
-        state.ldRatio = horizontalVelocity.magnitude / state.verticalSpeed;
-
-        if (Simulated && state.velocityMagnitude > 0.1f)
-        {
-            SimulateStabilizer();
-            SimulateLift();
-            SimulateAilerons();
-        }
+        rb.Move(position, rotation);
+        state.velocityNormalized = transform.forward;
+        state.velocityMagnitude = 1f;
+        state.stabilizerAngularVelocity = 0f;
     }
 
-    private void SimulateStabilizer()
+    private void Simulate(float dt)
+    {
+        if (Simulated)
+        {
+            var velocity = state.velocityNormalized * state.velocityMagnitude;
+            velocity += dt * G * Vector3.down;
+            var rotation = Quaternion.identity;
+            rotation = GetStabilizerRot(dt) * rotation;
+
+            var forwardVelocity = Vector3.Project(velocity, transform.forward);
+            state.fwdSpeed = forwardVelocity.magnitude;
+            SimulateLift(ref velocity, dt);
+
+            rotation = Quaternion.AngleAxis(GetAilerons(dt), transform.forward) * rotation;
+
+            var dragStep = 0.5f * drag * velocity.sqrMagnitude * dt;
+            dragStep = Mathf.Min(state.velocityMagnitude, dragStep);
+            velocity -= dragStep * velocity;
+
+            var newMagnitude = velocity.magnitude;
+            if (newMagnitude > MAX_SPEED)
+            {
+                velocity = velocity.normalized * MAX_SPEED;
+                newMagnitude = MAX_SPEED;
+            }
+            state.velocityMagnitude = newMagnitude;
+            state.velocityNormalized = velocity / newMagnitude;
+
+            state.verticalSpeed = Vector3.Project(velocity, Vector3.up).magnitude;
+            var hrzSpeed = Vector3.Project(velocity, Vector3.Cross(transform.right, Vector3.up)).magnitude;
+            state.ldRatio = hrzSpeed / Mathf.Abs(state.verticalSpeed);
+
+
+            if (Physics.Raycast(transform.position, velocity, out var rhi, newMagnitude * dt * 1.1f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                OnCollisionDetected(rhi);
+            else
+                rb.Move(transform.position + velocity * dt, rotation * transform.rotation); //rotation dt is applied to rotation before creating a quaternion
+        }
+        else
+            RemindPlayerOfRestart();
+    }
+
+    private Quaternion GetStabilizerRot(float dt)
     {
         Quaternion targetRotation = Quaternion.LookRotation(state.velocityNormalized, transform.up);
         Quaternion deltaRotation = targetRotation * Quaternion.Inverse(transform.rotation);
         deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
-        if (angle > 180f) angle -= 360f;
-        angle = Mathf.Min(angle, angle * angle);
-        Vector3 torque = axis * (angle * Mathf.Deg2Rad) * stabilizerStrength;
-        rb.AddTorque(torque, ForceMode.Force);
+        if (angle > 180f) 
+            angle -= 360f;
 
-        rb.linearDamping = linearDumpWrtAngularVelocity.Evaluate(Mathf.Abs(rb.angularVelocity.x));
+        var stepAngle = Mathf.SmoothDampAngle(angle, 0, ref state.stabilizerAngularVelocity, stabilizerSmoothTime, stabilizerMaxAngularSpeed, dt);
+        state.stabilizerAngularVelocity *= (1 - stabilizerAngularDamping * dt);
+        var stepRotation = Quaternion.AngleAxis(stepAngle, axis);
+        return stepRotation;
     }
-    private void SimulateLift()
+    private void SimulateLift(ref Vector3 velocity, float dt)
     {
-        var force = liftWrtSpeed.Evaluate(state.fwdSpeed);
-        rb.AddForce(transform.up * force, ForceMode.Force);
+        var lift = liftWrtSpeed.Evaluate(state.fwdSpeed);
+        velocity += dt * lift * transform.up;
     }
     float aileronInput = 0f;
-    private void SimulateAilerons()
+    private float GetAilerons(float dt)
     {
         var control = iAilerons.ReadValue<float>();
-        aileronInput = Mathf.Lerp(control, aileronInput, aileronInputFilter);
-        var torque = new Vector3(0, 0, aileronInput * aileronTorqueWrtSpeed.Evaluate(state.fwdSpeed));
-        rb.AddRelativeTorque(torque, ForceMode.Force);
+        var alpha = 1f - Mathf.Exp(-Time.deltaTime / aileronsSmoothtime);
+        aileronInput = Mathf.Lerp(aileronInput, control, alpha);
+
+        var effect = aileronTorqueWrtSpeed.Evaluate(state.fwdSpeed);
+        return aileronInput * effect * dt;
     }
 
     Coroutine dropRoutine = null;
@@ -176,6 +220,8 @@ public class PaperPlane : MonoBehaviour
         var tStart = Time.time;
         var trashTransform = trashcan.transform;
         var pStart = trashTransform.InverseTransformPoint(transform.position);
+        playerView.Queue(PlayerView.Target.Check);
+        playerView.pause = true;
         while (true)
         {
             var t = (Time.time - tStart) / dropTime;
@@ -188,20 +234,20 @@ public class PaperPlane : MonoBehaviour
 
             yield return null;
         }
-
-        playerView.Queue(PlayerView.Target.Check);
-        playerView.pause = true;
         dropRoutine = null;
     }
 
-    private void OnCollisionStay(Collision collision)
+    private void OnCollisionDetected(RaycastHit rhi)
     {
+        Debug.Log($"Collision with {rhi.collider.gameObject.name}.");
+        Simulated = false;
         RemindPlayerOfRestart();
+        OnCollision?.Invoke(rhi);
     }
 
     private void RemindPlayerOfRestart()
     {
-        if (Simulated)
+        if (!Simulated)
         {
             if (!playerView.IsShowing)
                 playerView.Queue(PlayerView.Target.Cross);
@@ -213,6 +259,9 @@ public class PaperPlane : MonoBehaviour
     {
         public Vector3 velocityNormalized;
         public float velocityMagnitude;
+        public float stabilizerAngularVelocity;
+        public float aileronsAngularVelocity;
+
         public float fwdSpeed;
         public float verticalSpeed;
         public float ldRatio;
