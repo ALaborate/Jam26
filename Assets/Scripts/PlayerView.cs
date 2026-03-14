@@ -18,6 +18,7 @@ public class PlayerView : MonoBehaviour
     [Space]
     [SerializeField] Text pressR;
     [SerializeField] float pressRFadeInTime = 8;
+    [SerializeField] float pressRFrequency = 1f;
 
 
 
@@ -133,7 +134,15 @@ public class PlayerView : MonoBehaviour
             if (color.a == 1)
                 break;
         }
-        pressRFadeInRoutine = null;
+
+        yield return new WaitForSeconds(showTime);
+
+        while (true)
+        {
+            color.a = (Mathf.Sin(Time.time * Mathf.PI * pressRFrequency) + 1) / 2f;
+            pressR.color = color;
+            yield return null;
+        }
     }
 
     public enum Target

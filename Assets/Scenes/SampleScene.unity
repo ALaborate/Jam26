@@ -2294,6 +2294,7 @@ MonoBehaviour:
   Plot: {fileID: 540090435}
   pressR: {fileID: 2098427659}
   pressRFadeInTime: 8
+  pressRFrequency: 2
   onPauseChange:
     m_PersistentCalls:
       m_Calls: []
