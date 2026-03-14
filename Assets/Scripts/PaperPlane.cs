@@ -1,9 +1,7 @@
 using ALaborateUnityUtils;
-using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.XR;
 
 public class PaperPlane : MonoBehaviour
 {
@@ -30,12 +28,6 @@ public class PaperPlane : MonoBehaviour
     InputAction iAilerons;
     InputAction iRestart;
 
-
-    //InputAction iUpDown;
-    //InputAction iFaster;
-    //InputAction iSlower;
-    //InputAction iLook;
-    //InputAction iLookButton;
     
     public static InputActionMap ActionMap => _actionMap ??= InputRef.DefaultActionAsset.FindActionMapLevenstein(nameof(PaperPlane), out _);
     public void DropIntoTrash(Trashcan can)
@@ -52,6 +44,7 @@ public class PaperPlane : MonoBehaviour
     private Rigidbody rb;
     private GameObject[] spawners = null;
     private Vector3 initialPosition;
+    private Quaternion initialRotation;
 
     private bool _simulated = false;
     private bool Simulated
@@ -81,8 +74,10 @@ public class PaperPlane : MonoBehaviour
 
         spawners = GameObject.FindGameObjectsWithTag("Respawn");
         initialPosition = transform.position;
+        initialRotation = transform.rotation;
         rb.isKinematic = true;
         state.velocityNormalized = transform.forward;
+        state.velocityMagnitude = 1f;
 
         playerView.onFinishingQueue.AddListener(() => alreadyOncePressedR = true); //here to ignore all subsequent presses before gameplay actually starts
     }
@@ -103,11 +98,15 @@ public class PaperPlane : MonoBehaviour
             if (alreadyOncePressedR && !pressingToGetHigherAfterRestart)
             {
                 var pos = initialPosition;
-                if (spawners.Length > 0)
+                var rot = initialRotation;
+                if (droppedOnce && spawners.Length > 0)
+                {
                     pos = spawners[Random.Range(0, spawners.Length)].transform.position;
+                    rot = transform.rotation;
+                }
 
                 Simulated = true;
-                Teleport(pos, transform.rotation);
+                Teleport(pos, rot);
 
                 if (playerView.Peek.HasValue && playerView.Peek.Value == PlayerView.Target.Check)
                 {
@@ -137,7 +136,8 @@ public class PaperPlane : MonoBehaviour
     private void Teleport(Vector3 position, Quaternion rotation)
     {
         rb.Move(position, rotation);
-        state.velocityNormalized = transform.forward;
+        state.velocityNormalized = rotation * Vector3.forward;
+        aileronInput = 0f;
         state.velocityMagnitude = 1f;
         state.stabilizerAngularVelocity = 0f;
     }
@@ -214,9 +214,11 @@ public class PaperPlane : MonoBehaviour
     }
 
     Coroutine dropRoutine = null;
+    bool droppedOnce = false;
     System.Collections.IEnumerator DropRoutine(Trashcan trashcan)
     {
         Simulated = false;
+        droppedOnce = true;
         var tStart = Time.time;
         var trashTransform = trashcan.transform;
         var pStart = trashTransform.InverseTransformPoint(transform.position);
