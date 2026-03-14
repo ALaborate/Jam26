@@ -2474,7 +2474,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetPos: {fileID: 1683352892}
-  smoothTime: 0.1
+  smoothTime: 0.11
   smoothChangeSpeed: 0.1
 --- !u!4 &1028483273 stripped
 Transform:
