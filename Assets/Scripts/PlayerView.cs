@@ -38,6 +38,15 @@ public class PlayerView : MonoBehaviour
     }
     public Target? Peek => queue.Count > 0 ? queue.Peek() : null;
 
+    public void OnDrop(int count)
+    {
+        if(count == 3)
+        {
+            showTime *= 0.32f;
+            fadeTime *= 0.4f;
+        }
+    }
+
     public bool pause = false;
 
 

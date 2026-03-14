@@ -34,6 +34,8 @@ public class PaperPlane : MonoBehaviour
     {
         if (dropRoutine != null)
             StopCoroutine(dropRoutine);
+        droppedCount++;
+        playerView.OnDrop(droppedCount);
         dropRoutine = StartCoroutine(DropRoutine(can));
     }
 
@@ -99,7 +101,7 @@ public class PaperPlane : MonoBehaviour
             {
                 var pos = initialPosition;
                 var rot = initialRotation;
-                if (droppedOnce && spawners.Length > 0)
+                if (droppedCount > 0 && spawners.Length > 0)
                 {
                     pos = spawners[Random.Range(0, spawners.Length)].transform.position;
                     rot = transform.rotation;
@@ -214,11 +216,11 @@ public class PaperPlane : MonoBehaviour
     }
 
     Coroutine dropRoutine = null;
-    bool droppedOnce = false;
+    int droppedCount = 0;
     System.Collections.IEnumerator DropRoutine(Trashcan trashcan)
     {
         Simulated = false;
-        droppedOnce = true;
+
         var tStart = Time.time;
         var trashTransform = trashcan.transform;
         var pStart = trashTransform.InverseTransformPoint(transform.position);
